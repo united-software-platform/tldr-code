@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/github/v/tag/united-software-platform/tldr-code?sort=semver&label=version)](https://github.com/united-software-platform/tldr-code/pkgs/container/tldr-code)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](./LICENSE)
-[![Docker image](https://github.com/united-software-platform/tldr-code/actions/workflows/docker.yml/badge.svg)](https://github.com/united-software-platform/tldr-code/actions/workflows/docker.yml)
+[![Docker image](https://img.shields.io/github/actions/workflow/status/united-software-platform/tldr-code/docker.yml?label=docker%20image)](https://github.com/united-software-platform/tldr-code/actions/workflows/docker.yml)
 [![Platforms: linux/amd64, linux/arm64](https://img.shields.io/badge/platforms-linux%2Famd64%20%7C%20linux%2Farm64-blue)](https://github.com/united-software-platform/tldr-code/pkgs/container/tldr-code)
 
 Token-efficient code analysis for LLMs across AST, call graph, data flow, security and quality — output optimized for machine consumption.

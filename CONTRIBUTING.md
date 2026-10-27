@@ -91,7 +91,7 @@ is dynamic: the badge service reads the latest tag, and `README.md` holds no cop
 |-------|--------------|------|-------------|
 | Version | git tags `vX.Y.Z` of the repository, highest by semver (shields `github/v/tag`) | dynamic | GHCR package `tldr-code` |
 | License | static value `AGPL-3.0`, matching `LICENSE` | static | `./LICENSE` |
-| Docker image | status of `.github/workflows/docker.yml` | dynamic | runs of the workflow in Actions |
+| Docker image | status of `.github/workflows/docker.yml` (shields `github/actions/workflow/status`) | dynamic | runs of the workflow in Actions |
 | Platforms | static value `linux/amd64 \| linux/arm64`, matching the build matrix of `docker.yml` | static | GHCR package `tldr-code` |
 
 Limits of the block:
