@@ -1,82 +1,76 @@
 # tldr
 
-Token-efficient code analysis for LLMs. 40+ commands across AST, call graph, data flow, security, and quality — output optimized for machine consumption.
+[![Version](https://img.shields.io/github/v/tag/united-software-platform/tldr-code?sort=semver&label=version)](https://github.com/united-software-platform/tldr-code/pkgs/container/tldr-code)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](./LICENSE)
+[![Docker image](https://github.com/united-software-platform/tldr-code/actions/workflows/docker.yml/badge.svg)](https://github.com/united-software-platform/tldr-code/actions/workflows/docker.yml)
+[![Platforms: linux/amd64, linux/arm64](https://img.shields.io/badge/platforms-linux%2Famd64%20%7C%20linux%2Farm64-blue)](https://github.com/united-software-platform/tldr-code/pkgs/container/tldr-code)
 
-## Why
+Token-efficient code analysis for LLMs: function signatures, call graphs, taint flows, complexity and dead code
+of 18 languages as structured JSON instead of raw source dumps. Here is the path from nothing but Docker
+to your first analysis; other tasks are in the [use cases](./docs/use-cases.md), changing tldr itself — in [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
-LLMs waste context on raw source dumps. tldr extracts the signal: function signatures, call graphs, taint flows, complexity metrics, dead code — as structured JSON that fits in a fraction of the tokens.
+---
 
-**18 languages**: Python, TypeScript, JavaScript, Go, Rust, Java, C, C++, Ruby, Kotlin, Swift, C#, Scala, PHP, Lua, Luau, Elixir, OCaml.
+## Contents
 
-## Installation
+- [What you need](#what-you-need)
+- [Step 1. Pull the image](#step-1-pull-the-image)
+- [Step 2. Run your first analysis](#step-2-run-your-first-analysis)
+- [Step 3. Call tldr like a local binary](#step-3-call-tldr-like-a-local-binary)
+- [Where next](#where-next)
+- [Limitations](#limitations)
+- [License](#license)
 
-### Standard install (recommended)
+---
 
-```bash
-cargo install tldr-cli
-```
+## What you need
 
-This gives you 60+ analysis commands — everything except natural-language semantic search.
+- Docker on a `linux/amd64` or `linux/arm64` host; on macOS, Docker Desktop. Rust and the tldr CLI are not needed.
+- A project in one of the supported languages: Python, TypeScript, JavaScript, Go, Rust, Java, C, C++, Ruby,
+  Kotlin, Swift, C#, Scala, PHP, Lua, Luau, Elixir, OCaml.
 
-### With semantic search
+---
 
-```bash
-cargo install tldr-cli --features semantic
-```
-
-Adds three commands:
-
-- `tldr semantic '<query>' <path>` — natural-language code search
-- `tldr embed <path>` — build embedding index
-- `tldr similar <file>` — find similar fragments
-
-This pulls in `fastembed` + ONNX Runtime. On first run it downloads the arctic-embed-m model (~110MB, cached). Builds reliably on Mac. Other platforms are unverified — if it doesn't compile for you, a PR with the fix is very welcome.
-
-### Docker (no install)
-
-Run `tldr` in any project without installing Rust or the CLI. The image is published for `linux/amd64` and `linux/arm64`.
+## Step 1. Pull the image
 
 ```bash
 docker pull ghcr.io/united-software-platform/tldr-code:latest
+```
 
+Docker picks the native image for your architecture. `:latest` follows every release.
+
+More — [case 1](./docs/use-cases.md#case-1-i-want-to-pin-an-image-version).
+
+---
+
+## Step 2. Run your first analysis
+
+Go to the root of your project and run:
+
+```bash
 docker run --rm \
   -u "$(id -u):$(id -g)" \
   -v "$PWD:/project:ro" \
   ghcr.io/united-software-platform/tldr-code:latest structure .
 ```
 
-Everything after the image name is passed to `tldr` unchanged; paths are relative to `/project`. Without arguments the image prints `tldr --help`. Pin a release with a version tag (`:0.4.0`, `:0.4`) instead of `:latest`.
+The project is mounted read-only at `/project`, so paths are relative to its root. Everything after the
+image name is passed to `tldr` unchanged; without arguments the image prints `tldr --help`. The result —
+functions, classes and imports of your code as JSON — goes to stdout, so redirect or pipe it as usual.
 
-Results go to stdout, so redirect or pipe them as usual. Mount `/out` only when a command writes a file you asked for, and create the directory first — otherwise Docker creates it owned by root and the container cannot write there:
+More — cases [2](./docs/use-cases.md#case-2-i-want-to-write-a-result-file-from-the-container), [3](./docs/use-cases.md#case-3-i-want-to-run-commands-that-modify-my-project).
 
-```bash
-mkdir -p out
-docker run --rm -u "$(id -u):$(id -g)" \
-  -v "$PWD:/project:ro" -v "$PWD/out:/out" \
-  ghcr.io/united-software-platform/tldr-code:latest fix apply -s app.py --error-file error.txt -o /out/app.py
-```
+---
 
-To call it like a local binary, add a shell function to `~/.bashrc` or `~/.zshrc`:
+## Step 3. Call tldr like a local binary
+
+Add a shell function to `~/.bashrc` or `~/.zshrc` and open a new shell:
 
 ```bash
 tldr() { docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/project:ro" ghcr.io/united-software-platform/tldr-code:latest "$@"; }
 ```
 
-The MCP server is in the image too. Point your MCP client at:
-
-```bash
-docker run -i --rm -v "$PWD:/project:ro" --entrypoint tldr-mcp ghcr.io/united-software-platform/tldr-code:latest
-```
-
-Limitations of the image:
-
-- Semantic search is not included: `embed`, `semantic` and `similar` are unknown subcommands.
-- Daemon mode is not supported: the container exits after each command.
-- With the project mounted read-only, commands that write into it do not work: `warm` and `fix apply -i` fail, `cache clear` removes nothing. Mount the project without `:ro` if you need them.
-- `bugbot` skips the baseline comparison: it needs `git worktree add`, which writes into `.git/`.
-- External linters (`pyright`, `eslint`, `ruff`, `golangci-lint`, `cargo clippy` and others) are not in the image, so `diagnostics`, `fix check` and the linter stage of `bugbot` report them as missing.
-
-## Quick start
+Now `tldr` runs in the current directory like an installed tool:
 
 ```bash
 # What's in this codebase?
@@ -95,132 +89,36 @@ tldr secure src/
 tldr health src/
 ```
 
-## Commands
+More — [case 4](./docs/use-cases.md#case-4-i-want-to-connect-an-mcp-client-to-the-image).
 
-### AST Analysis (L1)
-| Command | Description |
-|---------|-------------|
-| `tree` | File tree structure |
-| `structure` | Code structure — functions, classes, imports |
-| `extract` | Complete module info |
-| `imports` | Parse import statements |
-| `importers` | Find files importing a module |
+---
 
-### Call Graph (L2)
-| Command | Description |
-|---------|-------------|
-| `calls` | Cross-file call graph |
-| `impact` | Reverse call graph — who calls this? |
-| `dead` | Dead code detection |
-| `hubs` | Hub functions (centrality analysis) |
-| `whatbreaks` | What breaks if target changes? |
+## Where next
 
-### Data Flow (L3-L4)
-| Command | Description |
-|---------|-------------|
-| `reaching-defs` | Reaching definitions |
-| `available` | Available expressions (CSE detection) |
-| `dead-stores` | Dead store detection (SSA-based) |
+- Pinned versions, files written from the container, MCP clients, native install, semantic search, the daemon,
+  external linters — in the [use cases](./docs/use-cases.md).
+- All commands and output formats are printed by `tldr --help`, the options of one command by `tldr <command> --help`;
+  the [command reference](./docs/commands/) describes them in detail.
+- MCP tools — in [`docs/MCP.md`](./docs/MCP.md), common problems — in [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md),
+  how tldr works inside — in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+- If you want to change tldr itself — [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
-### Program Dependence (L5)
-| Command | Description |
-|---------|-------------|
-| `slice` | Backward program slice |
-| `chop` | Chop slice (forward + backward intersection) |
-| `taint` | Taint flow analysis |
+---
 
-### Security
-| Command | Description |
-|---------|-------------|
-| `secure` | Security dashboard |
-| `taint` | Taint flows (injection, XSS) |
-| `vuln` | Vulnerability scanning |
-| `api-check` | API misuse patterns |
-| `resources` | Resource leak detection |
+## Limitations
 
-### Quality & Metrics
-| Command | Description |
-|---------|-------------|
-| `smells` | Code smells |
-| `complexity` | Cyclomatic complexity |
-| `cognitive` | Cognitive complexity |
-| `halstead` | Halstead metrics |
-| `loc` | Lines of code |
-| `churn` | Git churn analysis |
-| `debt` | Technical debt (SQALE) |
-| `health` | Health dashboard |
-| `hotspots` | Churn x complexity |
-| `clones` | Code clone detection |
-| `cohesion` | LCOM4 cohesion |
-| `coupling` | Afferent/efferent coupling |
+Of the image:
 
-### Patterns & Architecture
-| Command | Description |
-|---------|-------------|
-| `patterns` | Design pattern detection |
-| `inheritance` | Class hierarchies |
-| `surface` | API surface extraction |
+- Semantic search is not included: `embed`, `semantic` and `similar` are unknown subcommands.
+- Daemon mode is not supported: the container exits after each command.
+- With the project mounted read-only, commands that write into it do not work: `warm` and `fix apply -i` fail, `cache clear` removes nothing. Mount the project without `:ro` if you need them.
+- `bugbot` skips the baseline comparison: it needs `git worktree add`, which writes into `.git/`.
+- External linters (`pyright`, `eslint`, `ruff`, `golangci-lint`, `cargo clippy` and others) are not in the image, so `diagnostics`, `fix check` and the linter stage of `bugbot` report them as missing.
 
-### Contracts & Verification
-| Command | Description |
-|---------|-------------|
-| `contracts` | Pre/postcondition inference |
-| `specs` | Extract test specs |
-| `invariants` | Infer invariants from tests |
-| `verify` | Verification dashboard |
-| `interface` | Interface contracts |
+Of the native install: semantic search (`--features semantic`) builds reliably on macOS; other platforms are unverified.
 
-### Search & Context
-| Command | Description |
-|---------|-------------|
-| `search` | BM25 search with structural context |
-| `semantic` | Natural language code search * |
-| `similar` | Find similar code fragments * |
-| `context` | LLM-ready context from entry point |
-| `definition` | Go-to-definition |
-| `explain` | Comprehensive function analysis |
-
-\* Requires the `semantic` feature: `cargo install tldr-cli --features semantic`
-
-### Aggregated
-| Command | Description |
-|---------|-------------|
-| `todo` | Improvement suggestions |
-| `diff` | AST-aware structural diff |
-| `fix` | Diagnose and auto-fix errors |
-| `bugbot` | Automated bug detection on changes |
-
-## Output formats
-
-```bash
---format json      # Default — structured, machine-readable
---format text      # Human-readable
---format compact   # Minified JSON for piping
---format sarif     # GitHub/VS Code integration
---format dot       # Graphviz visualization
-```
-
-## Daemon mode
-
-For repeated queries, the daemon caches results in memory:
-
-```bash
-tldr daemon start
-tldr warm src/          # Pre-warm cache
-tldr calls src/         # Fast — cache hit
-tldr daemon stop
-```
-
-## Documentation
-
-For detailed documentation, see the [docs/](docs/) folder:
-- [Installation Guide](docs/INSTALL.md)
-- [Setup Guide](docs/SETUP.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
-- [MCP Integration](docs/MCP.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Command Reference](docs/commands/)
+---
 
 ## License
 
-AGPL-3.0
+tldr is distributed under AGPL-3.0; the license text is in [`LICENSE`](./LICENSE).

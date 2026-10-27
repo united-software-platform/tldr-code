@@ -1,6 +1,7 @@
 #!/bin/sh
-# Проверка примеров подраздела «Docker (no install)» README.md на образе tldr
-# (design.md изменения add-docker-image-delivery, D5).
+# Проверка Docker-примеров документов на образе tldr: шагов README.md и кейсов 2 и 4
+# docs/use-cases.md (design.md изменения add-docker-image-delivery, D5; restructure-project-docs, D5).
+# Скрипт документы не разбирает и хранит копии команд: пример меняется вместе со скриптом в одном коммите.
 #
 # Создаёт во временном каталоге проект на Python и выполняет над ним команды README так,
 # как их запускает пользователь: под собственным UID, с проектом :ro и каталогом /out.
