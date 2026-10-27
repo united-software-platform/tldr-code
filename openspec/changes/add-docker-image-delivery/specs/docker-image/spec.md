@@ -59,8 +59,8 @@ SHALL выводить справку `tldr`.
 - **THEN** файл на хосте содержит полный результат команды
 
 #### Scenario: Запись файла в /out
-- **WHEN** смонтирован `-v "$PWD/out:/out"` и выполняется `fix apply -s <файл> ... -o /out/patched.py`
-- **THEN** на хосте появляется `out/patched.py`
+- **WHEN** каталог `out/` создан на хосте заранее, смонтирован `-v "$PWD/out:/out"` и выполняется `fix apply -s <файл> ... -o /out/patched.py`
+- **THEN** на хосте появляется `out/patched.py`, принадлежащий пользователю, переданному в `-u`
 
 ### Requirement: Произвольный пользователь
 Образ SHALL работать под любым идентификатором пользователя (User Identifier, UID) и группы, переданным через `-u`, и SHALL запускаться
@@ -165,3 +165,4 @@ Push в рабочую ветку `TLDR-*` SHALL публиковать толь
 | 1.0.0 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | Начальное создание: контракт запуска, каналы вывода, произвольный UID, git под чужим UID, MCP, теги, версии, архитектуры, метки, проверка перед публикацией, ограничения |
 | 1.0.1 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | Запись `fix` уточнена до подкоманды `fix apply` в сценарии записи в `/out` и в перечне ограничений |
 | 1.0.2 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | В требование «Теги образа» добавлен тег `dev-<короткий sha>` для push в рабочую ветку `TLDR-*` и сценарий к нему: решение пользователя проверять образ из CI через `docker pull` до выпуска |
+| 1.0.3 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | В сценарии «Запись файла в /out» каталог `out/` создаётся заранее — иначе Docker создаёт его от `root` — и результат принадлежит пользователю из `-u` |

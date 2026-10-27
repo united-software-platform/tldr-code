@@ -90,6 +90,14 @@ jobs:
       - name: Smoke test
         run: sh scripts/docker-smoke.sh tldr-code:smoke
 
+      # Примеры подраздела Docker в README выполняются так, как написаны
+      - name: README examples
+        run: sh scripts/docker-readme-check.sh tldr-code:smoke
+
+      # Дымовая проверка обязана ловить поломку: образ без safe.directory даёт код 1
+      - name: Smoke test self-check
+        run: sh scripts/docker-smoke-selftest.sh tldr-code:smoke
+
       - name: Log in to GHCR
         if: github.event_name == 'push'
         uses: docker/login-action@v3

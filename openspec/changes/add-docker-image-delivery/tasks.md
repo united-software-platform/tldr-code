@@ -40,6 +40,7 @@
 
 - [ ] 4.1 Добавить в `README.md` подраздел `### Docker (no install)` в `Installation` по D7: `docker pull`, `docker run` с `-u` и `:ro`, роль `/out`, shell-функция в одну строку; проверить: каждая команда раздела, выполненная над локальным образом `tldr-code:dev` (с заменой имени образа), работает как написано
 - [ ] 4.2 Добавить в тот же подраздел подключение `tldr-mcp` (`docker run -i --rm ... --entrypoint tldr-mcp`) и перечень ограничений из требования «Документированные ограничения» spec; проверить: перечень совпадает с требованием пункт в пункт, пример MCP проходит запрос `initialize`
+- [ ] 4.3 Написать `scripts/docker-readme-check.sh <образ>` и `scripts/docker-smoke-selftest.sh <образ>` по D5 и вызвать их в задании `build` workflow после дымовой проверки; проверить: прогон workflow проходит оба шага на amd64 и arm64
 
 ## 5. Интеграционная проверка
 
@@ -62,3 +63,4 @@
 | 1.0.1 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | Добавлена задача 3.5: проверочный тег `dev-<короткий sha>` на push в ветку `TLDR-*` с проверкой через `docker pull` и дымовую проверку |
 | 1.0.2 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | Отмечены выполненными 1.2, 1.3, 1.4, 2.1, 3.2, 3.5, 5.1: прогон workflow 40568351360 по `ebada63` собрал и проверил образ для amd64 и arm64 (дымовая проверка 12/12 на каждой архитектуре), опубликовал `dev-ebada63` с manifest list `linux/amd64` + `linux/arm64`; `docker pull` этого тега и `sh scripts/docker-smoke.sh` на нём прошли локально у пользователя; `openspec validate --strict` проходит. Для 3.2 вместо `actionlint` проверкой служит успешный прогон матрицы в GitHub Actions |
 | 1.0.3 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | Критерий задачи 1.1 исправлен: оценка «единицы мегабайт» была неверной — один `crates/` занимает около 19 МБ; в перечень исключений добавлены `continuum/` и `thoughts/`, задача отмечена выполненной по прогону 40568351360 (контекст 31 МБ без `target/` и `.git/`) с проверкой нового размера следующим прогоном |
+| 1.0.4 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | Добавлена задача 4.3: автоматическая проверка примеров README и самопроверка дымовой проверки в workflow — ими подтверждаются 2.2, 4.1 и 4.2 |

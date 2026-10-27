@@ -47,9 +47,10 @@ docker run --rm \
 
 Everything after the image name is passed to `tldr` unchanged; paths are relative to `/project`. Without arguments the image prints `tldr --help`. Pin a release with a version tag (`:0.4.0`, `:0.4`) instead of `:latest`.
 
-Results go to stdout, so redirect or pipe them as usual. Mount `/out` only when a command writes a file you asked for:
+Results go to stdout, so redirect or pipe them as usual. Mount `/out` only when a command writes a file you asked for, and create the directory first — otherwise Docker creates it owned by root and the container cannot write there:
 
 ```bash
+mkdir -p out
 docker run --rm -u "$(id -u):$(id -g)" \
   -v "$PWD:/project:ro" -v "$PWD/out:/out" \
   ghcr.io/united-software-platform/tldr-code:latest fix apply -s app.py --error-file error.txt -o /out/app.py
@@ -71,7 +72,7 @@ Limitations of the image:
 
 - Semantic search is not included: `embed`, `semantic` and `similar` are unknown subcommands.
 - Daemon mode is not supported: the container exits after each command.
-- With the project mounted read-only, commands that write into it fail: `warm`, `cache clear`, `fix apply -i`. Mount the project without `:ro` if you need them.
+- With the project mounted read-only, commands that write into it do not work: `warm` and `fix apply -i` fail, `cache clear` removes nothing. Mount the project without `:ro` if you need them.
 - `bugbot` skips the baseline comparison: it needs `git worktree add`, which writes into `.git/`.
 - External linters (`pyright`, `eslint`, `ruff`, `golangci-lint`, `cargo clippy` and others) are not in the image, so `diagnostics`, `fix check` and the linter stage of `bugbot` report them as missing.
 
