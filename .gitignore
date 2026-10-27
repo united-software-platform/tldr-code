@@ -64,3 +64,5 @@ tldr-test/
 # (recurrence broke v0.2.1's first cargo publish — must stay ignored)
 *.class
 META-INF/
+.ssh/
+.claude-accounts/
