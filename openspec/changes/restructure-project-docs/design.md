@@ -33,7 +33,8 @@
 **Goals:**
 
 - после правки повторный аудит навыком `project-docs` не находит расхождений ни в одном из трёх документов;
-- каждый Docker-пример, исполняемый проверкой, остаётся байт-в-байт её копией.
+- каждый Docker-пример, исполняемый проверкой, остаётся байт-в-байт её копией;
+- ни одна возможность и ни один факт апстримного `README.md` не теряются: материал переносится, а не удаляется (DOC-023).
 
 **Non-Goals:**
 
@@ -65,15 +66,17 @@ What you need   Docker (linux/amd64 или linux/arm64; macOS — Docker Desktop
 Step 1. Pull the image                     → More — case 1
 Step 2. Run your first analysis            → More — cases 2, 3
 Step 3. Call tldr like a local binary      → More — case 4
-Where next      docs/use-cases.md, tldr --help, docs/commands/, docs/MCP.md,
-                docs/TROUBLESHOOTING.md, docs/ARCHITECTURE.md, CONTRIBUTING.md
+Commands        карта возможностей автора, десять групп (D8)
+Output formats  json, text, compact, sarif, dot (D8)
+Where next      docs/use-cases.md, tldr --help, docs/commands/, docs/INSTALL.md, docs/SETUP.md,
+                docs/MCP.md, docs/TROUBLESHOOTING.md, docs/ARCHITECTURE.md, CONTRIBUTING.md
 Limitations     пять ограничений образа; semantic проверен только на macOS
 License         AGPL-3.0, ./LICENSE
 ```
 
-Назначение под бейджами — 1–3 строки из бывшего «Why»: экономия токенов, 18 языков, JSON вместо исходников.
-Второе предложение называет читателя и отсылает к кейсам и `CONTRIBUTING.md`. Число команд не пишется:
-оно уже разошлось (40+ против 60+), а перечень печатает `tldr --help`.
+Назначение под бейджами — полный текст бывшего «Why»: экономия токенов, что именно tldr извлекает, 18 языков.
+Следующее предложение называет читателя и отсылает к кейсам и `CONTRIBUTING.md`. Число команд не пишется:
+в исходнике оно противоречило само себе (40+ против 60+), а полный состав показывает карта D8.
 
 Step 3 переносит примеры бывшего «Quick start» (`structure`, `impact`, `dead`, `secure`, `health`) в форме
 вызова через shell-функцию.
@@ -153,6 +156,37 @@ Docker-пример, исполняемый скриптом, меняется �
 `CONTRIBUTING.md` и `docs/use-cases.md` получают таблицу версий по DOC-022 и DOC-024 на английском:
 `Version | Date | Task | Agent | Model | Changes`, первая запись `1.0.0`. `README.md` таблицу не ведёт.
 
+### D8. Карта возможностей — отступление от DGN-003 и DGN-011
+
+Разделы «Commands» и «Output formats» апстрима возвращаются в `README.md` полностью, между Step 3 и «Where next».
+Это осознанное отступление: DGN-003 не допускает справочных разделов в `README.md`, DGN-011 — перечней,
+которые печатает инструмент.
+
+Обоснование: карта уровней L1–L5 и групп — авторская структура, которая объясняет, что умеет инструмент.
+`tldr --help` печатает подкоманды без этой группировки, а `docs/commands/` разбит по файлам без оглавления.
+Без карты `README.md` теряет суть инструмента. Первая версия изменения удалила её без переноса, нарушив DOC-023.
+
+Таблицы групп переносятся без сокращений. Под заголовком каждой группы — строка «Reference:» со ссылкой
+на файл справочника:
+
+| Группа | Справочник |
+|--------|------------|
+| AST Analysis (L1) | `docs/commands/ast.md` |
+| Call Graph (L2) | `docs/commands/callgraph.md` |
+| Data Flow (L3-L4) | `docs/commands/dataflow.md` |
+| Program Dependence (L5) | `docs/commands/dataflow.md`; `taint` — `docs/commands/security.md` |
+| Security | `docs/commands/security.md` |
+| Quality & Metrics | `docs/commands/quality.md`, `docs/commands/metrics.md` |
+| Patterns & Architecture | `docs/commands/patterns.md`; `surface` — `docs/commands/tools.md` |
+| Contracts & Verification | `docs/commands/patterns.md` |
+| Search & Context | `docs/commands/search.md` |
+| Aggregated | `docs/commands/tools.md` |
+
+Сноска `*` для `semantic` и `similar` сохраняется и дополняется: в образе этих команд нет — кейс 6.
+
+Альтернатива — отдельный справочный документ с картой и ссылка из `README.md` — отклонена владельцем:
+карта возможностей должна быть видна на главной странице.
+
 ## Risks / Trade-offs
 
 - [Внешние ссылки на якоря README апстрима (`#installation`, `#commands`) ломаются] → контент переносится
@@ -166,6 +200,8 @@ Docker-пример, исполняемый скриптом, меняется �
 - [Репозиторий или пакет GHCR станут закрытыми] → бейджи версии и статуса перестанут отрисовываться;
   тогда «Limitations» README называет, какого бейджа нет и почему (DGN-004).
 - [Сборка `--features semantic` проверена только на macOS] → фиксируется в «Limitations» и кейсе 6.
+- [`README.md` длиннее, справочный блок занимает много места] → карта стоит после шагов и перед «Where next»:
+  основной путь она не прерывает.
 
 ## Migration Plan
 
@@ -181,3 +217,4 @@ Docker-пример, исполняемый скриптом, меняется �
 | Версия | Дата | Задача | Агент | Модель | Описание изменений |
 |--------|------|--------|-------|--------|--------------------|
 | 1.0.0 | 2026-10-27 | TLDR-001, OpenSpec change `restructure-project-docs` | Claude Code | Claude Opus 5.5 | Начальное создание: решения D1–D7 по итогам интервью с владельцем |
+| 1.0.1 | 2026-10-27 | TLDR-001, замечание владельца: из README пропали уровни и суть инструмента | Claude Code | Claude Opus 5.5 | Добавлено решение D8: карта возможностей и форматы вывода возвращаются в `README.md` с привязкой групп к `docs/commands/`; D2 и Goals дополнены, добавлен риск длины `README.md` |

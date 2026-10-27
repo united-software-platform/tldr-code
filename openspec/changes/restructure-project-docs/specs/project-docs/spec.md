@@ -15,7 +15,7 @@
 
 #### Scenario: Заголовки каркаса
 - **WHEN** читатель открывает `README.md`
-- **THEN** содержательные разделы озаглавлены «What you need», «Step N. <action>», «Where next», «Limitations», «License»
+- **THEN** содержательные разделы озаглавлены «What you need», «Step N. <action>», «Commands», «Output formats», «Where next», «Limitations», «License»
 
 #### Scenario: Метки кейса
 - **WHEN** читатель открывает любой кейс `docs/use-cases.md`
@@ -51,13 +51,35 @@
 - **WHEN** читатель ищет, почему `tldr semantic` в образе завершается ошибкой
 - **THEN** раздел «Limitations» `README.md` называет семантический поиск неподдерживаемым в образе
 
-### Requirement: Перечни команд не дублируются
-`README.md` SHALL NOT повторять перечни подкоманд и форматов вывода, которые печатает `tldr --help`.
-Вместо перечня `README.md` SHALL называть команду, печатающую справку, и ссылку на `docs/commands/`.
+### Requirement: Карта возможностей в README
+`README.md` SHALL содержать карту возможностей автора — группы AST Analysis (L1), Call Graph (L2),
+Data Flow (L3-L4), Program Dependence (L5), Security, Quality & Metrics, Patterns & Architecture,
+Contracts & Verification, Search & Context, Aggregated — с каждой командой и её описанием. Каждая группа
+SHALL ссылаться на свой файл справочника `docs/commands/`.
 
-#### Scenario: Читатель ищет список команд
-- **WHEN** читатель хочет узнать все подкоманды `tldr`
-- **THEN** раздел «Where next» `README.md` называет `tldr --help` и ссылку на `docs/commands/`
+#### Scenario: Читатель ищет анализ taint
+- **WHEN** читатель ищет, чем найти инъекции в коде
+- **THEN** `taint` есть в группах Program Dependence (L5) и Security, а группа Security ссылается на `docs/commands/security.md`
+
+#### Scenario: Команда только для semantic
+- **WHEN** читатель видит в карте `semantic` или `similar`
+- **THEN** сноска называет фичу `semantic`, её отсутствие в образе и кейс 6 `docs/use-cases.md`
+
+### Requirement: Форматы вывода в README
+`README.md` SHALL содержать раздел «Output formats» с форматами `json`, `text`, `compact`, `sarif`, `dot`
+и назначением каждого.
+
+#### Scenario: Вывод для GitHub
+- **WHEN** читатель хочет загрузить результат в GitHub code scanning
+- **THEN** раздел «Output formats» называет `--format sarif`
+
+### Requirement: Содержание апстрима сохранено
+Каждый факт апстримного `README.md` SHALL присутствовать в `README.md`, `docs/use-cases.md` или ссылкой
+на документ `docs/`: материал переносится, а не удаляется.
+
+#### Scenario: Ссылки на документацию апстрима
+- **WHEN** читатель ищет руководства `INSTALL.md`, `SETUP.md`, `TROUBLESHOOTING.md`, `MCP.md`, `ARCHITECTURE.md`
+- **THEN** «Where next» `README.md` ссылается на каждое из них
 
 ### Requirement: Документ кейсов
 Документ `docs/use-cases.md` SHALL содержать сквозную нумерацию кейсов: закрепление версии образа, запись файла в `/out`,

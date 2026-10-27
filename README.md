@@ -5,9 +5,9 @@
 [![Docker image](https://github.com/united-software-platform/tldr-code/actions/workflows/docker.yml/badge.svg)](https://github.com/united-software-platform/tldr-code/actions/workflows/docker.yml)
 [![Platforms: linux/amd64, linux/arm64](https://img.shields.io/badge/platforms-linux%2Famd64%20%7C%20linux%2Farm64-blue)](https://github.com/united-software-platform/tldr-code/pkgs/container/tldr-code)
 
-Token-efficient code analysis for LLMs: function signatures, call graphs, taint flows, complexity and dead code
-of 18 languages as structured JSON instead of raw source dumps. Here is the path from nothing but Docker
-to your first analysis; other tasks are in the [use cases](./docs/use-cases.md), changing tldr itself — in [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+Token-efficient code analysis for LLMs across AST, call graph, data flow, security and quality — output optimized for machine consumption.
+LLMs waste context on raw source dumps; tldr extracts the signal — function signatures, call graphs, taint flows, complexity metrics, dead code — as structured JSON that fits in a fraction of the tokens.
+Here is the path from nothing but Docker to your first analysis; other tasks are in the [use cases](./docs/use-cases.md), changing tldr itself — in [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ---
 
@@ -17,6 +17,8 @@ to your first analysis; other tasks are in the [use cases](./docs/use-cases.md),
 - [Step 1. Pull the image](#step-1-pull-the-image)
 - [Step 2. Run your first analysis](#step-2-run-your-first-analysis)
 - [Step 3. Call tldr like a local binary](#step-3-call-tldr-like-a-local-binary)
+- [Commands](#commands)
+- [Output formats](#output-formats)
 - [Where next](#where-next)
 - [Limitations](#limitations)
 - [License](#license)
@@ -93,12 +95,157 @@ More — [case 4](./docs/use-cases.md#case-4-i-want-to-connect-an-mcp-client-to-
 
 ---
 
+## Commands
+
+Analysis is layered: from the syntax tree (L1) through the call graph (L2) and data flow (L3-L4) to program
+dependence (L5), with security, quality, architecture, contracts, search and aggregated commands on top.
+Each group links to its detailed reference.
+
+### AST Analysis (L1)
+
+Reference: [`docs/commands/ast.md`](./docs/commands/ast.md).
+
+| Command | Description |
+|---------|-------------|
+| `tree` | File tree structure |
+| `structure` | Code structure — functions, classes, imports |
+| `extract` | Complete module info |
+| `imports` | Parse import statements |
+| `importers` | Find files importing a module |
+
+### Call Graph (L2)
+
+Reference: [`docs/commands/callgraph.md`](./docs/commands/callgraph.md).
+
+| Command | Description |
+|---------|-------------|
+| `calls` | Cross-file call graph |
+| `impact` | Reverse call graph — who calls this? |
+| `dead` | Dead code detection |
+| `hubs` | Hub functions (centrality analysis) |
+| `whatbreaks` | What breaks if target changes? |
+
+### Data Flow (L3-L4)
+
+Reference: [`docs/commands/dataflow.md`](./docs/commands/dataflow.md).
+
+| Command | Description |
+|---------|-------------|
+| `reaching-defs` | Reaching definitions |
+| `available` | Available expressions (CSE detection) |
+| `dead-stores` | Dead store detection (SSA-based) |
+
+### Program Dependence (L5)
+
+Reference: [`docs/commands/dataflow.md`](./docs/commands/dataflow.md); `taint` — [`docs/commands/security.md`](./docs/commands/security.md).
+
+| Command | Description |
+|---------|-------------|
+| `slice` | Backward program slice |
+| `chop` | Chop slice (forward + backward intersection) |
+| `taint` | Taint flow analysis |
+
+### Security
+
+Reference: [`docs/commands/security.md`](./docs/commands/security.md).
+
+| Command | Description |
+|---------|-------------|
+| `secure` | Security dashboard |
+| `taint` | Taint flows (injection, XSS) |
+| `vuln` | Vulnerability scanning |
+| `api-check` | API misuse patterns |
+| `resources` | Resource leak detection |
+
+### Quality & Metrics
+
+Reference: [`docs/commands/quality.md`](./docs/commands/quality.md), [`docs/commands/metrics.md`](./docs/commands/metrics.md).
+
+| Command | Description |
+|---------|-------------|
+| `smells` | Code smells |
+| `complexity` | Cyclomatic complexity |
+| `cognitive` | Cognitive complexity |
+| `halstead` | Halstead metrics |
+| `loc` | Lines of code |
+| `churn` | Git churn analysis |
+| `debt` | Technical debt (SQALE) |
+| `health` | Health dashboard |
+| `hotspots` | Churn x complexity |
+| `clones` | Code clone detection |
+| `cohesion` | LCOM4 cohesion |
+| `coupling` | Afferent/efferent coupling |
+
+### Patterns & Architecture
+
+Reference: [`docs/commands/patterns.md`](./docs/commands/patterns.md); `surface` — [`docs/commands/tools.md`](./docs/commands/tools.md).
+
+| Command | Description |
+|---------|-------------|
+| `patterns` | Design pattern detection |
+| `inheritance` | Class hierarchies |
+| `surface` | API surface extraction |
+
+### Contracts & Verification
+
+Reference: [`docs/commands/patterns.md`](./docs/commands/patterns.md).
+
+| Command | Description |
+|---------|-------------|
+| `contracts` | Pre/postcondition inference |
+| `specs` | Extract test specs |
+| `invariants` | Infer invariants from tests |
+| `verify` | Verification dashboard |
+| `interface` | Interface contracts |
+
+### Search & Context
+
+Reference: [`docs/commands/search.md`](./docs/commands/search.md).
+
+| Command | Description |
+|---------|-------------|
+| `search` | BM25 search with structural context |
+| `semantic` | Natural language code search * |
+| `similar` | Find similar code fragments * |
+| `context` | LLM-ready context from entry point |
+| `definition` | Go-to-definition |
+| `explain` | Comprehensive function analysis |
+
+\* Requires the `semantic` feature: `cargo install tldr-cli --features semantic`. The image does not include it —
+see [case 6](./docs/use-cases.md#case-6-i-want-natural-language-code-search).
+
+### Aggregated
+
+Reference: [`docs/commands/tools.md`](./docs/commands/tools.md).
+
+| Command | Description |
+|---------|-------------|
+| `todo` | Improvement suggestions |
+| `diff` | AST-aware structural diff |
+| `fix` | Diagnose and auto-fix errors |
+| `bugbot` | Automated bug detection on changes |
+
+---
+
+## Output formats
+
+```bash
+--format json      # Default — structured, machine-readable
+--format text      # Human-readable
+--format compact   # Minified JSON for piping
+--format sarif     # GitHub/VS Code integration
+--format dot       # Graphviz visualization
+```
+
+---
+
 ## Where next
 
 - Pinned versions, files written from the container, MCP clients, native install, semantic search, the daemon,
   external linters — in the [use cases](./docs/use-cases.md).
 - All commands and output formats are printed by `tldr --help`, the options of one command by `tldr <command> --help`;
   the [command reference](./docs/commands/) describes them in detail.
+- Native install and setup — in the [Installation Guide](./docs/INSTALL.md) and the [Setup Guide](./docs/SETUP.md).
 - MCP tools — in [`docs/MCP.md`](./docs/MCP.md), common problems — in [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md),
   how tldr works inside — in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 - If you want to change tldr itself — [`CONTRIBUTING.md`](./CONTRIBUTING.md).
