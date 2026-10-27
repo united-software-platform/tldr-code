@@ -51,7 +51,8 @@ jobs:
     # На PR и ветке check-version пропущен — сборка идёт; на теге — только после успешной сверки
     if: ${{ !cancelled() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped') }}
     strategy:
-      fail-fast: true
+      # Падение одной архитектуры не отменяет другую: видно, общая ли поломка
+      fail-fast: false
       matrix:
         # На PR — только amd64: проверка контракта не зависит от архитектуры, arm64 удвоил бы время
         include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"arch":"amd64","runner":"ubuntu-24.04"}]' || '[{"arch":"amd64","runner":"ubuntu-24.04"},{"arch":"arm64","runner":"ubuntu-24.04-arm"}]') }}
