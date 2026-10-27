@@ -2,7 +2,7 @@ target/
 target-linux/
 target-linux-compat/
 corpus/
-.claude/
+.claude/settings.local.json
 thoughts/
 tmp/
 dist/
@@ -58,9 +58,10 @@ api_map/
 audit-results/
 tdd-p1-bugs/
 tldr-test/
-/tools/
 
 # Kotlin compiler droppings from matrix-test fixtures
 # (recurrence broke v0.2.1's first cargo publish — must stay ignored)
 *.class
 META-INF/
+.ssh/
+.claude-accounts/
