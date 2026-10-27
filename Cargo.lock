@@ -3408,6 +3408,7 @@ dependencies = [
  "libc",
  "line-numbers",
  "md5",
+ "paste",
  "predicates",
  "proptest",
  "radix-heap",
