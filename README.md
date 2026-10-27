@@ -32,6 +32,50 @@ Adds three commands:
 
 This pulls in `fastembed` + ONNX Runtime. On first run it downloads the arctic-embed-m model (~110MB, cached). Builds reliably on Mac. Other platforms are unverified — if it doesn't compile for you, a PR with the fix is very welcome.
 
+### Docker (no install)
+
+Run `tldr` in any project without installing Rust or the CLI. The image is published for `linux/amd64` and `linux/arm64`.
+
+```bash
+docker pull ghcr.io/united-software-platform/tldr-code:latest
+
+docker run --rm \
+  -u "$(id -u):$(id -g)" \
+  -v "$PWD:/project:ro" \
+  ghcr.io/united-software-platform/tldr-code:latest structure .
+```
+
+Everything after the image name is passed to `tldr` unchanged; paths are relative to `/project`. Without arguments the image prints `tldr --help`. Pin a release with a version tag (`:0.4.0`, `:0.4`) instead of `:latest`.
+
+Results go to stdout, so redirect or pipe them as usual. Mount `/out` only when a command writes a file you asked for, and create the directory first — otherwise Docker creates it owned by root and the container cannot write there:
+
+```bash
+mkdir -p out
+docker run --rm -u "$(id -u):$(id -g)" \
+  -v "$PWD:/project:ro" -v "$PWD/out:/out" \
+  ghcr.io/united-software-platform/tldr-code:latest fix apply -s app.py --error-file error.txt -o /out/app.py
+```
+
+To call it like a local binary, add a shell function to `~/.bashrc` or `~/.zshrc`:
+
+```bash
+tldr() { docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/project:ro" ghcr.io/united-software-platform/tldr-code:latest "$@"; }
+```
+
+The MCP server is in the image too. Point your MCP client at:
+
+```bash
+docker run -i --rm -v "$PWD:/project:ro" --entrypoint tldr-mcp ghcr.io/united-software-platform/tldr-code:latest
+```
+
+Limitations of the image:
+
+- Semantic search is not included: `embed`, `semantic` and `similar` are unknown subcommands.
+- Daemon mode is not supported: the container exits after each command.
+- With the project mounted read-only, commands that write into it do not work: `warm` and `fix apply -i` fail, `cache clear` removes nothing. Mount the project without `:ro` if you need them.
+- `bugbot` skips the baseline comparison: it needs `git worktree add`, which writes into `.git/`.
+- External linters (`pyright`, `eslint`, `ruff`, `golangci-lint`, `cargo clippy` and others) are not in the image, so `diagnostics`, `fix check` and the linter stage of `bugbot` report them as missing.
+
 ## Quick start
 
 ```bash

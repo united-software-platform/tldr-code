@@ -1,0 +1,184 @@
+# Сборка, дымовая проверка и публикация Docker-образа tldr в GHCR.
+#
+# PR: образ собирается для amd64 и проходит scripts/docker-smoke.sh, в реестр ничего не уходит.
+# Тег vX.Y.Z: тег сверяется с версией workspace, образ собирается нативно для amd64 и arm64,
+# каждая архитектура проходит дымовую проверку и публикуется по digest, затем digest'ы
+# сводятся в manifest list с тегами X.Y.Z, X.Y и latest (пре-релиз — только собственный тег).
+# Push в рабочую ветку TLDR-*: та же сборка и проверка, публикуется только тег dev-<короткий sha>
+# для проверки образа до выпуска; X.Y и latest не меняются.
+#
+# Workflow отделён от release.yml: тот генерирует cargo-dist, и ручные правки в нём
+# затирались бы при регенерации. Решения — design.md изменения add-docker-image-delivery (D4).
+
+name: Docker image
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'TLDR-*'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/united-software-platform/tldr-code
+
+jobs:
+  # Тег выпуска обязан совпадать с версией workspace: иначе образ получил бы чужую версию
+  check-version:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Tag matches workspace version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(sed -n '/^\[workspace\.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Cargo.toml)
+          if [ "${TAG#v}" != "$version" ]; then
+            echo "::error::tag $TAG does not match workspace version $version"
+            exit 1
+          fi
+          echo "tag $TAG matches workspace version $version"
+
+  build:
+    needs: check-version
+    # На PR и ветке check-version пропущен — сборка идёт; на теге — только после успешной сверки
+    if: ${{ !cancelled() && (needs.check-version.result == 'success' || needs.check-version.result == 'skipped') }}
+    strategy:
+      # Падение одной архитектуры не отменяет другую: видно, общая ли поломка
+      fail-fast: false
+      matrix:
+        # На PR — только amd64: проверка контракта не зависит от архитектуры, arm64 удвоил бы время
+        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"arch":"amd64","runner":"ubuntu-24.04"}]' || '[{"arch":"amd64","runner":"ubuntu-24.04"},{"arch":"arm64","runner":"ubuntu-24.04-arm"}]') }}
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      # Полная история нужна дымовой проверке churn
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@v3
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          labels: |
+            org.opencontainers.image.licenses=AGPL-3.0
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/${{ matrix.arch }}
+          load: true
+          tags: tldr-code:smoke
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=docker-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=docker-${{ matrix.arch }}
+
+      - name: Smoke test
+        run: sh scripts/docker-smoke.sh tldr-code:smoke
+
+      # Примеры подраздела Docker в README выполняются так, как написаны
+      - name: README examples
+        run: sh scripts/docker-readme-check.sh tldr-code:smoke
+
+      # Дымовая проверка обязана ловить поломку: образ без safe.directory даёт код 1
+      - name: Smoke test self-check
+        run: sh scripts/docker-smoke-selftest.sh tldr-code:smoke
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Повторная сборка берёт все слои из кэша сборщика — публикуется проверенный образ
+      - name: Push by digest
+        id: push
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/${{ matrix.arch }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=docker-${{ matrix.arch }}
+
+      - name: Export digest
+        if: github.event_name == 'push'
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+
+      - name: Upload digest
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v6
+        with:
+          name: digest-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    # Без !cancelled() пропущенный check-version по цепочке needs пропускал бы и merge
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.build.result == 'success' }}
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v7
+        with:
+          pattern: digest-*
+          path: ${{ runner.temp }}/digests
+          merge-multiple: true
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Тег выпуска: semver — {{major}}.{{minor}} и latest для пре-релиза не создаются.
+      # Ветка: только dev-<короткий sha>, latest выключен явно.
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: |
+            latest=${{ startsWith(github.ref, 'refs/tags/') && 'auto' || 'false' }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=dev-,format=short,enable=${{ startsWith(github.ref, 'refs/heads/') }}
+
+      - name: Create manifest list
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          docker buildx imagetools create \
+            $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.IMAGE }}@sha256:%s ' *)
+
+      - name: Inspect image
+        run: docker buildx imagetools inspect "$(jq -r '.tags[0]' <<< "$DOCKER_METADATA_OUTPUT_JSON")"
