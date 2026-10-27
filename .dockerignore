@@ -1,0 +1,29 @@
+# Контекст сборки образа — только то, что нужно `cargo build`: корневые Cargo.toml и Cargo.lock
+# и каталог crates/. Всё остальное отсекается, чтобы контекст не тянул target/ и историю git
+# и чтобы правка документации или окружения не сбрасывала кэш слоя сборки.
+
+# Артефакты сборки и история
+target/
+.git/
+
+# CI, IDE и окружение агента
+.github/
+.idea/
+.claude/
+.env
+.env.*
+docker-compose.yml
+.sdd-kit-manifest.json
+
+# Планирование, правила и документация
+openspec/
+rules/
+docs/
+*.md
+
+# Файлы сборки образа и проверки — в образ не входят
+Dockerfile
+.dockerignore
+scripts/
+Makefile
+MakefileTLDR
