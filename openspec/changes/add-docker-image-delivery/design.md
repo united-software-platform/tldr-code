@@ -163,7 +163,10 @@
 ### D6. `.dockerignore`
 
 Контекст сборки ограничивается тем, что нужно `cargo build`: исключаются `target/`, `.git/`,
-`openspec/`, `rules/`, `.idea/`, `.env*`, каталоги документации. `Cargo.lock` и `crates/` остаются.
+`openspec/`, `rules/`, `.idea/`, `.env*`, каталоги документации, а также заметки апстрима
+`continuum/` и `thoughts/` — в коде на них ссылаются только комментарии. `Cargo.lock` и `crates/`
+остаются; `crates/` с исходниками и тестовыми фикстурами занимает около 19 МБ, это основной объём
+контекста.
 
 ### D7. Документация в `README.md`
 
@@ -207,3 +210,4 @@
 | 1.0.3 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | По итогам первого прогона workflow: в Context зафиксировано отставание `Cargo.lock` от манифестов после выпуска `0.4.0`, в D3 — синхронизация версий crate'ов workspace в lock как правка без изменения Rust-кода с сохранением `--locked`, в D4 — матрица с `fail-fast: false` |
 | 1.0.4 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | По итогам второго прогона workflow: в Context и D3 добавлено второе расхождение `Cargo.lock` — dev-зависимость `paste` отсутствовала в списке зависимостей `tldr-cli`; синхронизация дополнена ссылкой на уже записанный в lock пакет `paste 1.0.15` |
 | 1.0.5 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | По итогам третьего прогона workflow: в D4 добавлен пункт об условиях `build` и `merge` с `!cancelled()` — пропущенный вне тега `check-version` по цепочке `needs` пропускал `merge`, и тег `dev-<sha>` не публиковался |
+| 1.0.6 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | В D6 добавлено исключение `continuum/` и `thoughts/` из контекста сборки: заметки апстрима занимали около 10 МБ из 31 МБ контекста; зафиксировано, что основной объём — `crates/` (около 19 МБ) |
