@@ -129,6 +129,9 @@
 1. Матрица с `fail-fast: false`: падение одной архитектуры не отменяет сборку другой, и по прогону
    видно, общая поломка или архитектурная. Публикация при этом не страдает: `merge` ждёт успеха
    всех сборок.
+1. Условия `build` и `merge` начинаются с `!cancelled()`: без функции статуса GitHub Actions
+   неявно требует успеха всей цепочки `needs`, и пропущенный вне тега `check-version` пропускал бы
+   задания ниже по цепочке. `merge` поэтому явно проверяет `needs.build.result == 'success'`.
 1. Checkout с `fetch-depth: 0` — дымовой проверке `churn` нужна история.
 
 Метки формата Open Container Initiative (OCI) задаёт `metadata-action` (`source`, `version`, `revision`), `licenses=AGPL-3.0`
@@ -203,3 +206,4 @@
 | 1.0.2 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | В D4 добавлен триггер push в ветки `TLDR-*` с публикацией только тега `dev-<короткий sha>`, в риски — накопление таких тегов. Решение Q7 «без плавающих тегов» уточнено: теги выпусков не меняются, проверочный тег неизменяем и привязан к коммиту |
 | 1.0.3 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | По итогам первого прогона workflow: в Context зафиксировано отставание `Cargo.lock` от манифестов после выпуска `0.4.0`, в D3 — синхронизация версий crate'ов workspace в lock как правка без изменения Rust-кода с сохранением `--locked`, в D4 — матрица с `fail-fast: false` |
 | 1.0.4 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | По итогам второго прогона workflow: в Context и D3 добавлено второе расхождение `Cargo.lock` — dev-зависимость `paste` отсутствовала в списке зависимостей `tldr-cli`; синхронизация дополнена ссылкой на уже записанный в lock пакет `paste 1.0.15` |
+| 1.0.5 | 2026-10-27 | TLDR-001, OpenSpec change `add-docker-image-delivery` | Claude Code | Claude Opus 5.5 | По итогам третьего прогона workflow: в D4 добавлен пункт об условиях `build` и `merge` с `!cancelled()` — пропущенный вне тега `check-version` по цепочке `needs` пропускал `merge`, и тег `dev-<sha>` не публиковался |

@@ -128,7 +128,8 @@ jobs:
           retention-days: 1
 
   merge:
-    if: github.event_name == 'push'
+    # Без !cancelled() пропущенный check-version по цепочке needs пропускал бы и merge
+    if: ${{ !cancelled() && github.event_name == 'push' && needs.build.result == 'success' }}
     needs: build
     runs-on: ubuntu-24.04
     permissions:
